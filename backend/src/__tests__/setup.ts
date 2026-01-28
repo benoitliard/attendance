@@ -1,34 +1,14 @@
-// Test setup
-// 
-// These tests require a running PostgreSQL database.
-// Set DATABASE_URL in .env or as environment variable before running tests.
-// Example: DATABASE_URL="postgresql://user:pass@localhost:5432/attendance_test"
-//
-import { PrismaClient } from '@prisma/client';
+// Test setup with Prisma mock
+// No real database needed - uses in-memory mock
 
-// Set test environment variables
+// Set test environment variables FIRST
 process.env.JWT_SECRET = 'test-secret-key-for-jest';
 process.env.PORT = '3002';
 process.env.NODE_ENV = 'test';
 
-const prisma = new PrismaClient();
+// Export reset function for tests that need it
+export { resetMockData } from '../lib/__mocks__/prisma';
 
-beforeAll(async () => {
-  if (!process.env.DATABASE_URL) {
-    console.warn('⚠️  DATABASE_URL not set. Integration tests will be skipped.');
-    return;
-  }
-  try {
-    await prisma.$connect();
-  } catch (error) {
-    console.error('Failed to connect to test database:', error);
-  }
-});
-
-afterAll(async () => {
-  try {
-    await prisma.$disconnect();
-  } catch (error) {
-    // Ignore disconnect errors
-  }
-});
+// Note: Don't auto-reset between tests - some test suites 
+// have dependent tests that share state (e.g., auth tests)
+// Each test file can import and call resetMockData() as needed

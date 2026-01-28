@@ -1,3 +1,6 @@
+# Attendance App - Docker Compose
+# Run: docker compose up --build
+
 services:
   db:
     image: postgres:15-alpine
@@ -15,9 +18,11 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - attendance-network
 
   api:
-    build: .
+    build: ./backend
     container_name: attendance-api
     depends_on:
       db:
@@ -26,16 +31,20 @@ services:
       DATABASE_URL: postgresql://attendance:attendance123@db:5432/attendance
       JWT_SECRET: super-secret-jwt-key-change-in-production
       PORT: 3001
+      NODE_ENV: production
     ports:
       - "3001:3001"
     volumes:
-      - ./uploads:/app/uploads
+      - uploads_data:/app/uploads
+    networks:
+      - attendance-network
+    restart: unless-stopped
 
   web:
     build:
-      context: ../web
+      context: ./web
       args:
-        - NEXT_PUBLIC_API_URL=http://localhost:3001
+        NEXT_PUBLIC_API_URL: http://localhost:3001
     container_name: attendance-web
     depends_on:
       - api
@@ -43,6 +52,14 @@ services:
       NEXT_PUBLIC_API_URL: http://localhost:3001
     ports:
       - "3000:3000"
+    networks:
+      - attendance-network
+    restart: unless-stopped
 
 volumes:
   postgres_data:
+  uploads_data:
+
+networks:
+  attendance-network:
+    driver: bridge
