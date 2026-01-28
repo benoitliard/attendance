@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(TEACHER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  classes   Class[]
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+}
+
+model Student {
+  id          String       @id @default(cuid())
+  firstName   String
+  lastName    String
+  studentId   String       @unique
+  email       String?
+  phone       String?
+  classId     String
+  class       Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
+  attendances Attendance[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Class {
+  id        String    @id @default(cuid())
+  name      String
+  code      String    @unique
+  teacherId String
+  teacher   User      @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  students  Student[]
+  sessions  Session[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Session {
+  id          String       @id @default(cuid())
+  classId     String
+  class       Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
+  date        DateTime
+  startTime   String
+  endTime     String
+  topic       String?
+  attendances Attendance[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Attendance {
+  id        String           @id @default(cuid())
+  studentId String
+  student   Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  sessionId String
+  session   Session          @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  status    AttendanceStatus
+  notes     String?
+  markedAt  DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([studentId, sessionId])
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}

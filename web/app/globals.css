@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background-start: #f0f4f8;
+  --background-end: #e2e8f0;
+}
+
+body {
+  background: linear-gradient(135deg, var(--background-start) 0%, var(--background-end) 100%);
+  min-height: 100vh;
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/70 backdrop-blur-[20px] border border-white/30 shadow-glass;
+  }
+
+  .glass-card {
+    @apply glass rounded-2xl p-6;
+  }
+
+  .glass-button {
+    @apply glass rounded-xl px-6 py-3 font-medium transition-all duration-200;
+    @apply hover:bg-white/80 hover:shadow-glass-lg active:scale-[0.98];
+  }
+
+  .glass-button-primary {
+    @apply bg-primary-500 text-white border-primary-400/30;
+    @apply hover:bg-primary-600;
+  }
+
+  .glass-input {
+    @apply glass rounded-xl px-4 py-3 outline-none transition-all duration-200;
+    @apply focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/50;
+    @apply placeholder:text-slate-400;
+  }
+
+  .status-present {
+    @apply bg-emerald-500 text-white;
+  }
+
+  .status-absent {
+    @apply bg-red-500 text-white;
+  }
+
+  .status-late {
+    @apply bg-amber-500 text-white;
+  }
+
+  .status-excused {
+    @apply bg-blue-500 text-white;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.5);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.7);
+}
