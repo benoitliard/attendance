@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import { body, validationResult } from 'express-validator';
-import { PrismaClient } from '@prisma/client';
+import { body } from 'express-validator';
 import bcrypt from 'bcryptjs';
 import ExcelJS from 'exceljs';
+import prisma from '../lib/prisma';
 import { authenticate, requireAdmin, AuthRequest } from '../middleware/auth';
+import { handleValidation, asyncHandler, errorResponse, notFound } from '../middleware/validation';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Apply admin middleware to all routes
 router.use(authenticate, requireAdmin);
@@ -42,61 +42,36 @@ router.post(
     body('name').trim().notEmpty(),
     body('role').isIn(['ADMIN', 'TEACHER']),
   ],
-  async (req: AuthRequest, res) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+  handleValidation,
+  asyncHandler(async (req: AuthRequest, res: any) => {
+    const { email, password, name, role } = req.body;
 
-      const { email, password, name, role } = req.body;
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) return errorResponse(res, 400, 'Email already registered');
 
-      const existing = await prisma.user.findUnique({ where: { email } });
-      if (existing) {
-        return res.status(400).json({ error: 'Email already registered' });
-      }
+    const user = await prisma.user.create({
+      data: { email, password: await bcrypt.hash(password, 12), name, role },
+      select: { id: true, email: true, name: true, role: true, createdAt: true },
+    });
 
-      const hashedPassword = await bcrypt.hash(password, 12);
-
-      const user = await prisma.user.create({
-        data: { email, password: hashedPassword, name, role },
-        select: { id: true, email: true, name: true, role: true, createdAt: true },
-      });
-
-      res.status(201).json({ user });
-    } catch (error) {
-      console.error('Create user error:', error);
-      res.status(500).json({ error: 'Failed to create user' });
-    }
-  }
+    res.status(201).json({ user });
+  })
 );
 
 // Update user
 router.put(
   '/users/:id',
-  [
-    body('name').optional().trim().notEmpty(),
-    body('role').optional().isIn(['ADMIN', 'TEACHER']),
-  ],
-  async (req: AuthRequest, res) => {
-    try {
-      const { name, role } = req.body;
-
-      const user = await prisma.user.update({
-        where: { id: req.params.id },
-        data: {
-          ...(name && { name }),
-          ...(role && { role }),
-        },
-        select: { id: true, email: true, name: true, role: true },
-      });
-
-      res.json({ user });
-    } catch (error) {
-      console.error('Update user error:', error);
-      res.status(500).json({ error: 'Failed to update user' });
-    }
-  }
+  [body('name').optional().trim().notEmpty(), body('role').optional().isIn(['ADMIN', 'TEACHER'])],
+  handleValidation,
+  asyncHandler(async (req: AuthRequest, res: any) => {
+    const { name, role } = req.body;
+    const user = await prisma.user.update({
+      where: { id: req.params.id },
+      data: { ...(name && { name }), ...(role && { role }) },
+      select: { id: true, email: true, name: true, role: true },
+    });
+    res.json({ user });
+  })
 );
 
 // Delete user
