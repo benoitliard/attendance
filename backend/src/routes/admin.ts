@@ -125,19 +125,24 @@ router.get('/stats', async (req: AuthRequest, res) => {
     const weekAgo = new Date(today);
     weekAgo.setDate(weekAgo.getDate() - 7);
 
-    const weeklyTrend = await prisma.$queryRaw`
-      SELECT 
+    const weeklyTrendRaw = await prisma.$queryRaw`
+      SELECT
         DATE(s.date) as date,
-        COUNT(CASE WHEN a.status = 'PRESENT' THEN 1 END) as present,
-        COUNT(CASE WHEN a.status = 'ABSENT' THEN 1 END) as absent,
-        COUNT(CASE WHEN a.status = 'LATE' THEN 1 END) as late,
-        COUNT(*) as total
+        COUNT(CASE WHEN a.status = 'PRESENT' THEN 1 END)::int as present,
+        COUNT(CASE WHEN a.status = 'ABSENT' THEN 1 END)::int as absent,
+        COUNT(CASE WHEN a.status = 'LATE' THEN 1 END)::int as late,
+        COUNT(*)::int as total
       FROM "Session" s
       LEFT JOIN "Attendance" a ON a."sessionId" = s.id
       WHERE s.date >= ${weekAgo}
       GROUP BY DATE(s.date)
       ORDER BY DATE(s.date)
     `;
+
+    // Convert any remaining BigInt to Number (safety net)
+    const weeklyTrend = JSON.parse(JSON.stringify(weeklyTrendRaw, (_, v) =>
+      typeof v === 'bigint' ? Number(v) : v
+    ));
 
     res.json({
       totals: {

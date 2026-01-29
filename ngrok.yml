@@ -1,0 +1,9 @@
+version: "2"
+authtoken: YOUR_NGROK_AUTH_TOKEN # Remplacez par votre token ngrok
+
+tunnels:
+  attendance-web:
+    addr: 3000
+    proto: http
+    bind_tls: true
+    host_header: "localhost:3000"

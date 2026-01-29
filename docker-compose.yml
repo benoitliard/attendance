@@ -44,12 +44,11 @@ services:
     build:
       context: ./web
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:3001/api
+        # API_INTERNAL_URL for server-side proxy (compiled into Next.js rewrites)
+        API_INTERNAL_URL: http://api:3001
     container_name: attendance-web
     depends_on:
       - api
-    environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3001/api
     ports:
       - "3000:3000"
     networks:
